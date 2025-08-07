@@ -36,12 +36,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
               labels.map((label, index) => (
                 <SidebarMenuItem key={label.id}>
-                  <Link to="/$labelId" params={{ labelId: label.id }}>
-                    <SidebarMenuButton>
-                      <Badge className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums">{index + 1}</Badge>
-                      <span className="max-w-52 text-wrap">{label.name}</span>
-                    </SidebarMenuButton>
-                  </Link>
+                  <SidebarMenuButton onClick={() => { setCurrentLabel(label) }}>
+                    <Badge style={{ backgroundColor: label.color }} className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums">{index + 1}</Badge>
+                    <span className="max-w-52 text-wrap">{label.name}</span>
+                  </SidebarMenuButton>
+
                   <SidebarMenuAction onClick={() => { setOpen('edit'); setCurrentLabel(label) }}>
                     <Pencil />
                   </SidebarMenuAction>

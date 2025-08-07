@@ -2,7 +2,8 @@ import type Konva from "konva";
 import React from "react";
 import { Component } from "react";
 import { Circle, Line } from "react-konva";
-import { lighten, opacityColor } from "./utils";
+import { opacityColor } from "./utils";
+import type { Polygon } from "@/components/layout/data/schema";
 
 interface Point {
   x: number;
@@ -10,10 +11,7 @@ interface Point {
 }
 
 interface FigureProps {
-  figure: {
-    id: string;
-    points: Point[];
-  };
+  figure: Polygon;
 
   options: {
     newPoint?: Point;
@@ -24,10 +22,8 @@ interface FigureProps {
     vertexColor?: string;
     interactive: boolean;
     onSelect: () => void;
-    onChange: (type: string, payload: { point?: Point, pos?: number, figure?: FigureProps['figure'] }) => void;
+    onChange: (type: string, payload: { point?: Point, pos?: number, figure: FigureProps['figure'] }) => void;
   };
-
-  skipNextClick: () => void;
 }
 
 interface FigureState {
@@ -82,13 +78,13 @@ abstract class Figure extends Component<FigureProps, FigureState> {
       vertexColor,
       interactive
     } = options;
-    console.log(`----- editing: ${editing} ------`)
-    console.log(`----- sketch: ${sketch} ------`)
     const strokeWidth = editing && sketch ? 2 : 3;
     const strokeColor = editing && sketch ? color : vertexColor || color;
-    const fillColor = editing && sketch ? 'rgba(0,0,0,0)' : opacityColor(color, 0.5)
-    console.log(lighten(color, 500));
-    const dashArray = editing ? [8] : [];
+    const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.4)
+    // console.log('----- editing -----', editing)
+    // console.log('----- finished -----', finished)
+    // console.log('----- fillColor -----', fillColor)
+    const dashArray = editing ? [6] : [];
 
     return (
       <>
@@ -100,10 +96,10 @@ abstract class Figure extends Component<FigureProps, FigureState> {
           fill={fillColor}
           dash={dashArray}
           fillRule="evenodd"
-          onClick={() => {
+          onClick={(e: Konva.KonvaEventObject<MouseEvent>) => {
+            e.cancelBubble = true;
             if (interactive) {
               options.onSelect();
-              this.props.skipNextClick();
             }
           }}
         />
@@ -116,19 +112,45 @@ abstract class Figure extends Component<FigureProps, FigureState> {
               key={`${id}-${i}`}
               x={point.x}
               y={point.y}
-              radius={8}
+              radius={6}
               fill={strokeColor}
-              onClick={() => this.onPointClick(i)}
+              onClick={(e: Konva.KonvaEventObject<MouseEvent>) => {
+                e.cancelBubble = true;
+                if (i == 0) {
+                  e.target.getStage()!.container().style.cursor = 'inherit';
+                }
+                this.onPointClick(i)
+              }}
               draggable={editing}
-              onDragStart={() => {
+              onMouseEnter={(e) => {
+                if (finished) {
+                  if (editing) {
+                    e.target.getStage()!.container().style.cursor = 'move';
+                  } else {
+                    e.target.getStage()!.container().style.cursor = 'grab';
+                  }
+                } else {
+                  if (i == 0) {
+                    e.target.getStage()!.container().style.cursor = 'cell';
+                  } else {
+                    e.target.getStage()!.container().style.cursor = 'crosshair';
+                  }
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (editing) {
+                  e.target.getStage()!.container().style.cursor = 'crosshair';
+                }
+              }}
+              onDragStart={(e: Konva.KonvaEventObject<DragEvent>) => {
                 console.log('------ onDragStart ------')
-                this.props.skipNextClick();
+                e.cancelBubble = true;
                 this.setState({ dragging: true })
               }}
               onDragMove={
                 (e: Konva.KonvaEventObject<DragEvent>) => {
                   console.log('------ onDragMove ------')
-                  this.props.skipNextClick();
+                  e.cancelBubble = true;
                   const pos = e.target.position();
                   this.setState({
                     draggedPoint: { point: pos, index: i }
@@ -139,6 +161,7 @@ abstract class Figure extends Component<FigureProps, FigureState> {
                 (e: Konva.KonvaEventObject<DragEvent>) => {
                   console.log('------ onDragEnd ------')
                   const pos = e.target.position();
+                  e.cancelBubble = true;
                   this.onPointMoved(pos, i);
                   this.setState({
                     dragging: false,
@@ -184,7 +207,7 @@ export class PolygonFigure extends Figure {
   }
 
   protected makeExtraElements(): React.ReactNode {
-    const { figure, options, skipNextClick } = this.props;
+    const { figure, options } = this.props;
     const { id, points } = figure;
     const { editing, finished, onChange } = options;
     const { dragging } = this.state;
@@ -214,10 +237,16 @@ export class PolygonFigure extends Figure {
               radius={4}
               fill="white"
               opacity={0.5}
+              onMouseEnter={(e) => {
+                e.target.getStage()!.container().style.cursor = 'copy';
+              }}
+              onMouseLeave={(e) => {
+                e.target.getStage()!.container().style.cursor = 'inherit';
+              }}
               onMouseDown={
-                () => {
+                (e: Konva.KonvaEventObject<MouseEvent>) => {
+                  e.cancelBubble = true;
                   onChange('add', { point: midPoint, pos: (i as number + 1), figure })
-                  skipNextClick();
                 }
               }
             />
@@ -226,21 +255,20 @@ export class PolygonFigure extends Figure {
   }
 
   protected onPointMoved(point: Point, i: number): void {
-    const { figure, options, skipNextClick } = this.props;
-    skipNextClick();
+    const { figure, options } = this.props;
+
     options.onChange('move', { point, pos: i, figure })
   }
 
   protected onPointClick(i: number): void {
-    const { figure, options, skipNextClick } = this.props;
+    const { figure, options } = this.props;
     const { points } = figure;
     const { finished, editing, onChange } = options;
     if (!finished && i === 0) {
       console.log('------ 点击origin circle ------')
-      if (points.length > 3) {
-        onChange('end', {});
+      if (points.length >= 3) {
+        onChange('end', { figure });
       }
-      skipNextClick();
       return;
     }
 
@@ -249,7 +277,6 @@ export class PolygonFigure extends Figure {
       if (points.length > 3) {
         onChange('remove', { pos: i, figure })
       }
-      skipNextClick();
       return;
     }
   }
