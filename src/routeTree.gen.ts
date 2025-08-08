@@ -10,10 +10,16 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as labelRouteRouteImport } from './routes/(label)/route'
+import { Route as RouteRouteImport } from './routes/route'
 import { Route as labelLabelIdRouteImport } from './routes/(label)/$labelId'
 
 const labelRouteRoute = labelRouteRouteImport.update({
   id: '/(label)',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RouteRoute = RouteRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const labelLabelIdRoute = labelLabelIdRouteImport.update({
@@ -32,6 +38,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof RouteRoute
   '/(label)': typeof labelRouteRouteWithChildren
   '/(label)/$labelId': typeof labelLabelIdRoute
 }
@@ -40,10 +47,11 @@ export interface FileRouteTypes {
   fullPaths: '/' | '/$labelId'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/$labelId'
-  id: '__root__' | '/(label)' | '/(label)/$labelId'
+  id: '__root__' | '/' | '/(label)' | '/(label)/$labelId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  RouteRoute: typeof RouteRoute
   labelRouteRoute: typeof labelRouteRouteWithChildren
 }
 
@@ -54,6 +62,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof labelRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(label)/$labelId': {
@@ -79,6 +94,7 @@ const labelRouteRouteWithChildren = labelRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  RouteRoute: RouteRoute,
   labelRouteRoute: labelRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport

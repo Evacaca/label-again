@@ -80,7 +80,7 @@ abstract class Figure extends Component<FigureProps, FigureState> {
     } = options;
     const strokeWidth = editing && sketch ? 2 : 3;
     const strokeColor = editing && sketch ? color : vertexColor || color;
-    const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.4)
+    const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.2)
     // console.log('----- editing -----', editing)
     // console.log('----- finished -----', finished)
     // console.log('----- fillColor -----', fillColor)
