@@ -4,10 +4,10 @@ import { z } from "zod";
 const projectSchema = z.object({
   id: z.string(),
   type: z.enum(["Labeling", "Matching"]),
-  file: z.instanceof(File).optional(),
+  file: z.instanceof(File),
   matrixData: z.array(z.array(z.number())),
   matrixColor: z.string(),
-  imageData: z.string().optional(),
+  image: z.instanceof(File).optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;

@@ -1,14 +1,16 @@
 import type React from "react";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Pencil, Plus, Shell } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "../ui/badge";
 import { useLabels } from "./context/labels-context";
-import SidebarButtons from "./components/sidebar-buttons";
+
+import { sidebarData } from "./data/sidebar-data";
+import { NavGroup } from "./components/nav-group";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpen, setCurrentLabel, labels, currentLabel } = useLabels()
-  return <Sidebar collapsible='icon' variant='floating' {...props}>
+  return <Sidebar collapsible='icon' variant='floating' side="right" {...props}>
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuButton size='lg' asChild>
@@ -51,9 +53,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      {
+        sidebarData.map(item => <NavGroup key={item.title} {...item} />)
+      }
     </SidebarContent>
-    <SidebarFooter>
-      <SidebarButtons />
-    </SidebarFooter>
   </Sidebar >
 }

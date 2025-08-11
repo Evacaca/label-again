@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Project } from './data/schema';
+import type { Project } from '@/context/data/schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -10,6 +10,7 @@ import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from '@tanstack/react-router';
+import { useProjects } from '@/context/project-context';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Label name is required' }),
@@ -24,6 +25,7 @@ type UserForm = z.infer<typeof formSchema>
 
 export default function Project() {
   const navigate = useNavigate();
+  const { addProject } = useProjects();
   const form = useForm<UserForm>({
     resolver: zodResolver(formSchema),
   })
@@ -37,11 +39,11 @@ export default function Project() {
       console.log(matrixData)
     }
     const project: Project = {
-      id: crypto.randomUUID(),
+      id: '__project__' + crypto.randomUUID(),
       ...values,
       matrixData,
     }
-    localStorage.setItem(project.id, JSON.stringify(project));
+    addProject(project)
     navigate({ to: '/$labelId', params: { labelId: project.id } });
   }
   return (
@@ -151,7 +153,7 @@ export default function Project() {
                   <FormMessage />
                 </FormItem>
               } />
-              <FormField name="file" render={({ field }) => {
+              <FormField name="image" render={({ field }) => {
                 return (
                   <FormItem>
                     <FormLabel>Image</FormLabel>
@@ -160,7 +162,7 @@ export default function Project() {
                         <Input
                           type="text"
                           readOnly
-                          value={form.getValues('file')?.name || ''}
+                          value={form.getValues('image')?.name || ''}
                           className="cursor-pointer pr-20"
                           onClick={() => {
                             const input = document.createElement('input');

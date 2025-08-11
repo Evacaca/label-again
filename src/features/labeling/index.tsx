@@ -3,14 +3,21 @@ import Canvas from "./canvas";
 import { useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { Polygon } from "@/components/layout/data/schema";
+import { useProjects } from "@/context/project-context";
 
 export default function Labeling() {
-  const { currentLabel, updateLabel, labels, setCurrentLabel } = useLabels();
+  const { getProject } = useProjects();
   const { labelId } = useParams({ from: '/(label)/$labelId' })
-  const project = JSON.parse(localStorage.getItem(labelId) || '{}')
+  const project = getProject(labelId);
+  const { currentLabel, updateLabel, labels, setCurrentLabel } = useLabels();
+
   const [figures, setFigures] = useState<Polygon[]>([])
 
   const getCurrentLabel = (figure: Polygon) => {
+    if (!figure) {
+      setCurrentLabel(null);
+      return;
+    }
     const label = labels.find(label => label.id === figure.labelId);
     if (!label) return;
     setCurrentLabel(label);
@@ -30,14 +37,7 @@ export default function Labeling() {
     });
     setFigures(newFigures);
   }, [labels]);
-
-  if (!currentLabel) return <div className="p-4">
-    <h2 className='text-2xl font-bold tracking-tight'>Hello!</h2>
-    <p className='text-muted-foreground'>
-      标签无效，请先创建标签
-    </p>
-  </div>
-
+  if (!project) return <div>Project not found</div>;
   return (
     <Canvas {...{ project, label: currentLabel, figures, onChange: updateLabel, onSelectFigure: getCurrentLabel }} />
   )

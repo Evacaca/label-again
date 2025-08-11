@@ -15,7 +15,7 @@ export function Layout({ children }: Props) {
   return (
     <SidebarProvider defaultOpen={open}>
       <LabelsProvider>
-        <AppSidebar />
+
         <div className={cn(
           'ml-auto w-full max-w-full',
           'peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)]',
@@ -33,6 +33,7 @@ export function Layout({ children }: Props) {
           {children ? children : <Outlet />}
 
         </div>
+        <AppSidebar />
         <LabelDialog />
       </LabelsProvider>
     </SidebarProvider>

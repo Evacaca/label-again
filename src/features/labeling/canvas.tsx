@@ -4,7 +4,8 @@ import { Circle, Layer, Stage } from "react-konva";
 import { PolygonFigure } from "./figure";
 import type { Label, Polygon } from "@/components/layout/data/schema";
 import { genId } from "./utils";
-import type { Project } from "../project/data/schema";
+import type { Project } from "@/context/data/schema";
+import ImageLoader from "./image-loader";
 
 interface Point {
   x: number;
@@ -12,7 +13,7 @@ interface Point {
 }
 interface CanvasProps {
   project: Project;
-  label: Label;
+  label: Label | null;
   figures: Polygon[];
   onChange: (updatedLabel: Label) => void;
   onSelectFigure: (figure: Polygon) => void;
@@ -47,6 +48,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   }, []);
 
   useEffect(() => {
+    if (!label) return;
     const currentPolygons = polygons.filter(p => p.labelId === label.id);
     const updatedLabel = {
       ...label,
@@ -59,12 +61,11 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   }, [polygons]);
 
   useEffect(() => {
-    if (selectedFigureId) {
-      onSelectFigure(getSelectedFigure());
-    }
+    onSelectFigure(getSelectedFigure());
   }, [selectedFigureId])
 
   const handleClick = () => {
+    if (!label) return;
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -222,6 +223,12 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         onMouseMove={handleMouseMove}
         x={position.x}
         y={position.y}>
+        {
+          project.image &&
+          <ImageLoader
+            imageFile={project.image}
+          />
+        }
         <Layer>
           {
             matrixData.map(([x, y], i) => (

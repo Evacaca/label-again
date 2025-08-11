@@ -2,11 +2,13 @@ import { Button } from "@/components/ui/button";
 import { useLabels } from "../context/labels-context";
 import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
+import { useProjects } from "@/context/project-context";
 
 export default function SidebarButtons() {
   const { labels } = useLabels()
+  const { exportImage } = useProjects()
 
-  const handleExport = () => {
+  const handleExportLabels = () => {
     if (labels.length === 0) {
       return;
     }
@@ -24,7 +26,8 @@ export default function SidebarButtons() {
       <Link to="/" className="block">
         <Button className="w-full" variant="secondary"><Plus /> New Project</Button>
       </Link>
-      <Button onClick={handleExport}>Export</Button>
+      <Button onClick={handleExportLabels} variant="outline">Export Labels</Button>
+      <Button onClick={exportImage}>Export Image</Button>
     </>
   )
 }

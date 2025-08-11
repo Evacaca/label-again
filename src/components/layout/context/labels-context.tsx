@@ -27,7 +27,6 @@ export default function LabelsProvider({ children }: Props) {
   const [labels, setLabels] = React.useState<Label[]>([]);
 
   const updateLabel = React.useCallback((updatedLabel: Label) => {
-    console.log('updateLabel', updatedLabel)
     setLabels(prev => prev.map(label => label.id === updatedLabel.id ? { ...label, ...updatedLabel } : label))
   }, [setLabels])
 
