@@ -18,13 +18,16 @@ export const parseFile2Matrix = (file: File) => {
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-          console.log(text);
           const lines = text.split("\n");
+          let symbol = ",";
+          if (lines[0].includes("\t")) {
+            symbol = "\t";
+          }
           // 解析 CSV 内容
           // 默认第一行为表头
           const matrixData = lines.slice(1).map((line) =>
             line
-              .split(",")
+              .split(symbol)
               .slice(1)
               .map((v) => Number(v))
           );

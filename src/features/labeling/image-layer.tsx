@@ -19,6 +19,8 @@ interface ImageTransform {
   rotation: number;
   scaleX: number;
   scaleY: number;
+  flipX: boolean;
+  flipY: boolean;
 }
 
 const ImageLayer: React.FC<
@@ -34,6 +36,8 @@ const ImageLayer: React.FC<
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
+      flipX: false,
+      flipY: false,
     });
 
     const { projectRef } = useProjects();
@@ -60,7 +64,7 @@ const ImageLayer: React.FC<
 
         // 创建下载链接
         const link = document.createElement('a');
-        link.download = 'transformed-image.png';
+        link.download = 'LA-image.png';
         link.href = dataUrl;
         link.click();
       }
@@ -113,8 +117,10 @@ const ImageLayer: React.FC<
         width: node.width(),
         height: node.height(),
         rotation: node.rotation(),
-        scaleX,
-        scaleY
+        scaleX: Math.abs(scaleX),
+        scaleY: Math.abs(scaleY),
+        flipX: scaleX < 0,
+        flipY: scaleY < 0,
       });
     };
 
@@ -128,6 +134,8 @@ const ImageLayer: React.FC<
           ref={imageRef}
           image={image.imgObj}
           {...transform}
+          scaleX={transform.scaleX * (transform.flipX ? -1 : 1)}
+          scaleY={transform.scaleY * (transform.flipY ? -1 : 1)}
           draggable
           onDragStart={(e) => {
             e.evt.stopPropagation();

@@ -21,6 +21,7 @@ interface FigureProps {
     color: string;
     vertexColor?: string;
     interactive: boolean;
+    scale: number;
     onSelect: () => void;
     onChange: (type: string, payload: { point?: Point, pos?: number, figure: FigureProps['figure'] }) => void;
   };
@@ -76,14 +77,19 @@ abstract class Figure extends Component<FigureProps, FigureState> {
       sketch,
       color,
       vertexColor,
-      interactive
+      interactive,
+      scale,
     } = options;
-    const strokeWidth = editing && sketch ? 2 : 3;
+
+    // 根据缩放比例计算线条宽度
+    const baseStrokeWidth = editing && sketch ? 2 : 3;
+    const strokeWidth = baseStrokeWidth / scale;
+
+    // 根据缩放比例计算顶点半径
+    const baseVertexRadius = 6;
+    const vertexRadius = baseVertexRadius / scale;
     const strokeColor = editing && sketch ? color : vertexColor || color;
     const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.2)
-    // console.log('----- editing -----', editing)
-    // console.log('----- finished -----', finished)
-    // console.log('----- fillColor -----', fillColor)
     const dashArray = editing ? [6] : [];
 
     return (
@@ -112,7 +118,7 @@ abstract class Figure extends Component<FigureProps, FigureState> {
               key={`${id}-${i}`}
               x={point.x}
               y={point.y}
-              radius={6}
+              radius={vertexRadius}
               fill={strokeColor}
               onClick={(e: Konva.KonvaEventObject<MouseEvent>) => {
                 e.cancelBubble = true;
@@ -209,7 +215,7 @@ export class PolygonFigure extends Figure {
   protected makeExtraElements(): React.ReactNode {
     const { figure, options } = this.props;
     const { id, points } = figure;
-    const { editing, finished, onChange } = options;
+    const { editing, finished, scale, onChange } = options;
     const { dragging } = this.state;
 
     if (!finished || !editing || dragging) return [];
@@ -222,7 +228,9 @@ export class PolygonFigure extends Figure {
     const calcDistance = (p1: Point, p2: Point): number => {
       return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     }
-
+    // 根据缩放比例计算中点半径
+    const baseMidPointRadius = 4;
+    const midPointRadius = baseMidPointRadius / scale;
     return points.map(
       (pos, i) => [pos, points[(i + 1) % points.length], i])
       .filter(([p1, p2]) => calcDistance(p1 as Point, p2 as Point) > 10)
@@ -234,7 +242,7 @@ export class PolygonFigure extends Figure {
               key={`${id}-${i}-mid`}
               x={midPoint.x}
               y={midPoint.y}
-              radius={4}
+              radius={midPointRadius}
               fill="white"
               opacity={0.5}
               onMouseEnter={(e) => {
