@@ -55,15 +55,19 @@ abstract class Figure extends Component<FigureProps, FigureState> {
 
   protected makeGuides() {
     const guides = this.calcGuides();
-    const { color } = this.props.options;
-
+    const { color, scale } = this.props.options;
+    const baseStrokeWidth = 2;
+    const strokeWidth = baseStrokeWidth / scale;
+    const baseDashArray = [5];
+    const dashArray = baseDashArray.map(d => d / scale);
     return guides.map((points, i) => (
       <Line
         key={i}
         points={points.flatMap(point => [point.x, point.y])}
         stroke={color}
+        strokeWidth={strokeWidth}
         opacity={0.7}
-        dash={[5]}
+        dash={dashArray}
       />
     ));
   }
@@ -90,8 +94,8 @@ abstract class Figure extends Component<FigureProps, FigureState> {
     const vertexRadius = baseVertexRadius / scale;
     const strokeColor = editing && sketch ? color : vertexColor || color;
     const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.2)
-    const dashArray = editing ? [6] : [];
-
+    const baseDashArray = editing ? [6] : [];
+    const dashArray = baseDashArray.map(d => d / scale);
     return (
       <>
         <Line

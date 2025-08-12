@@ -1,4 +1,10 @@
-import { Download, FileOutput, Plus } from "lucide-react";
+import {
+  Download,
+  FileOutput,
+  FlipHorizontal,
+  FlipVertical,
+  Plus,
+} from "lucide-react";
 
 export interface SidebarItem {
   title: string;
@@ -14,6 +20,18 @@ export const sidebarData: SidebarItem[] = [
   {
     title: "Tools",
     items: [
+      {
+        title: "flip image X axis",
+        key: "flipImageX",
+        icon: FlipHorizontal,
+        type: "action",
+      },
+      {
+        title: "flip image Y axis",
+        key: "flipImageY",
+        icon: FlipVertical,
+        type: "action",
+      },
       {
         title: "export labels",
         key: "exportLabels",

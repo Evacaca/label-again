@@ -6,7 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 export function NavGroup({ title, items }: SidebarItem) {
   const { labels } = useLabels()
-  const { exportImage } = useProjects()
+  const { exportImage, flipImageX, flipImageY } = useProjects()
   const navigate = useNavigate();
 
   const exportLabels = () => {
@@ -18,7 +18,7 @@ export function NavGroup({ title, items }: SidebarItem) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'labels.json';
+    a.download = 'LA-labels.json';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -31,6 +31,12 @@ export function NavGroup({ title, items }: SidebarItem) {
           break;
         case 'exportImage':
           exportImage();
+          break;
+        case 'flipImageX':
+          flipImageX();
+          break;
+        case 'flipImageY':
+          flipImageY();
           break;
         default:
           break;

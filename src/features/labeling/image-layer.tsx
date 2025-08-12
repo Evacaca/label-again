@@ -1,6 +1,6 @@
 import { useProjects } from "@/context/project-context";
 import type Konva from "konva";
-import React, { useImperativeHandle } from "react";
+import React, { useCallback, useImperativeHandle } from "react";
 import { useEffect, useState } from "react"
 import { Image, Layer, Transformer } from "react-konva";
 
@@ -23,10 +23,18 @@ interface ImageTransform {
   flipY: boolean;
 }
 
+export interface Bounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const ImageLayer: React.FC<
   {
     imageFile: File,
-  }> = ({ imageFile }) => {
+    onBoundsChange: (bounds: Bounds) => void
+  }> = ({ imageFile, onBoundsChange }) => {
     const [image, setImage] = useState<ImageData>();
     const [transform, setTransform] = useState<ImageTransform>({
       x: 0,
@@ -43,6 +51,52 @@ const ImageLayer: React.FC<
     const { projectRef } = useProjects();
     const imageRef = React.useRef<Konva.Image>(null);
     const transformerRef = React.useRef<Konva.Transformer>(null);
+
+    const handleBoundsChange = useCallback(() => {
+      if (imageRef.current && onBoundsChange) {
+        const rect = imageRef.current.getClientRect();
+        onBoundsChange({
+          x: 0,
+          y: 0,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    }, [onBoundsChange]);
+
+    const handleFlipX = useCallback(() => {
+      if (!imageRef.current) return;
+      const newFlipX = !transform.flipX;
+      const newScaleX = transform.scaleX * (newFlipX ? -1 : 1);
+      // 沿中轴线翻转：调整 x 坐标
+      const offsetX = imageRef.current.width() * transform.scaleX;
+      imageRef.current.x(imageRef.current.x() + offsetX * (-newScaleX));
+      setTransform(prev => ({
+        ...prev,
+        flipX: newFlipX,
+        scaleX: Math.abs(newScaleX),
+      }));
+
+      imageRef.current.scaleX(newScaleX);
+      imageRef.current.getLayer()?.batchDraw();
+    }, [transform]);
+
+    const handleFlipY = useCallback(() => {
+      if (!imageRef.current) return;
+      const newFlipY = !transform.flipY;
+      const newScaleY = transform.scaleY * (newFlipY ? -1 : 1);
+      // 沿中轴线翻转：调整 y 坐标
+      const offsetY = imageRef.current.height() * transform.scaleY;
+      imageRef.current.y(imageRef.current.y() + offsetY * (-newScaleY));
+      setTransform(prev => ({
+        ...prev,
+        flipY: newFlipY,
+        scaleY: Math.abs(newScaleY),
+      }));
+
+      imageRef.current.scaleY(newScaleY);
+      imageRef.current.getLayer()?.batchDraw();
+    }, [transform]);
 
     useImperativeHandle(projectRef, () => ({
       handleExport: () => {
@@ -67,7 +121,9 @@ const ImageLayer: React.FC<
         link.download = 'LA-image.png';
         link.href = dataUrl;
         link.click();
-      }
+      },
+      handleFlipX,
+      handleFlipY,
     }));
 
     useEffect(() => {
@@ -79,23 +135,23 @@ const ImageLayer: React.FC<
         const img = new window.Image();
         img.onload = () => {
           // 设置图片对象并计算缩放比例
-          const scale = Math.min(500 / img.width, 500 / img.height);
           setImage({
             imgObj: img,
             width: img.width,
             height: img.height,
-            scale,
+            scale: 1
           });
           setTransform(prev => ({
             ...prev,
-            width: img.width * scale,
-            height: img.height * scale
+            width: img.width,
+            height: img.height,
           }));
+          handleBoundsChange();
         };
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(imageFile);
-    }, [imageFile]);
+    }, [imageFile, handleBoundsChange]);
 
     useEffect(() => {
       if (imageRef.current && transformerRef.current) {
@@ -108,20 +164,15 @@ const ImageLayer: React.FC<
       if (!imageRef.current) return;
 
       const node = imageRef.current;
-      const scaleX = node.scaleX();
-      const scaleY = node.scaleY();
 
-      setTransform({
+      setTransform((prev) => ({
+        ...prev,
         x: node.x(),
         y: node.y(),
         width: node.width(),
         height: node.height(),
         rotation: node.rotation(),
-        scaleX: Math.abs(scaleX),
-        scaleY: Math.abs(scaleY),
-        flipX: scaleX < 0,
-        flipY: scaleY < 0,
-      });
+      }));
     };
 
     if (!image) {
@@ -134,8 +185,6 @@ const ImageLayer: React.FC<
           ref={imageRef}
           image={image.imgObj}
           {...transform}
-          scaleX={transform.scaleX * (transform.flipX ? -1 : 1)}
-          scaleY={transform.scaleY * (transform.flipY ? -1 : 1)}
           draggable
           onDragStart={(e) => {
             e.evt.stopPropagation();

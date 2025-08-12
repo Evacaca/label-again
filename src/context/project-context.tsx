@@ -6,8 +6,10 @@ interface ProjectContextType {
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   addProject: (project: Project) => void;
   getProject: (id: string) => Project | null;
-  projectRef: React.RefObject<{ handleExport: () => void } | null>;
+  projectRef: React.RefObject<{ handleExport: () => void; handleFlipX: () => void; handleFlipY: () => void } | null>;
   exportImage: () => void;
+  flipImageX: () => void;
+  flipImageY: () => void;
 }
 
 const ProjectContext = React.createContext<ProjectContextType | null>(null)
@@ -18,7 +20,11 @@ interface Props {
 
 export default function ProjectProvider({ children }: Props) {
   const [projects, setProjects] = React.useState<Project[]>([]);
-  const projectRef = useRef<{ handleExport: () => void }>(null);
+  const projectRef = useRef<{ 
+    handleExport: () => void; 
+    handleFlipX: () => void; 
+    handleFlipY: () => void;
+  }>(null);
 
   // 从 localStorage 加载项目数据
   React.useEffect(() => {
@@ -54,6 +60,14 @@ export default function ProjectProvider({ children }: Props) {
     projectRef.current?.handleExport();
   }
 
+  const flipImageX = () => {
+    projectRef.current?.handleFlipX();
+  }
+
+  const flipImageY = () => {
+    projectRef.current?.handleFlipY();
+  }
+
   return (
     <ProjectContext.Provider value={{
       projects,
@@ -61,7 +75,9 @@ export default function ProjectProvider({ children }: Props) {
       addProject,
       getProject,
       projectRef,
-      exportImage
+      exportImage,
+      flipImageX,
+      flipImageY,
     }}>
       {children}
     </ProjectContext.Provider>
