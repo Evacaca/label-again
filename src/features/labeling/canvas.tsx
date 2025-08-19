@@ -5,8 +5,8 @@ import { PolygonFigure } from "./figure";
 import type { Label, Polygon } from "@/components/layout/data/schema";
 import { genId } from "./utils";
 import type { Project } from "@/context/data/schema";
-import ImageLayer, { type Bounds } from "./image-layer";
-import MatrixLayer from "./matrix-layer";
+import ImageLayer from "./image-layer";
+import MatrixLayer, { type Bounds } from "./matrix-layer";
 
 interface Point {
   x: number;
@@ -19,6 +19,14 @@ interface CanvasProps {
   onChange: (updatedLabel: Label) => void;
   onSelectFigure: (figure: Polygon) => void;
 }
+
+interface CanvasState {
+  polygons: Polygon[];
+  selectedFigureId: string | null;
+  scale: number;
+  position: Point;
+}
+
 const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSelectFigure }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const stageRef = React.useRef<Konva.Stage>(null);
@@ -29,47 +37,10 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   const [tracePoint, setTracePoint] = useState<Point | null>(null);
   const [selectedFigureId, setSelectedFigureId] = useState<string | null>(null);
-  const [imageBounds, setImageBounds] = useState<Bounds | null>(null);
+
   const [isInitialized, setIsInitialized] = useState(false);
+  const [bounds, setBounds] = useState<Bounds | null>(null);
 
-  const calculateContentBounds = () => {
-    const matrixBounds = project.matrixData.reduce((acc, [x, y]) => {
-      if (isNaN(x) || isNaN(y)) return acc;
-      acc.minX = Math.min(acc.minX, x);
-      acc.minY = Math.min(acc.minY, y);
-      acc.maxX = Math.max(acc.maxX, x);
-      acc.maxY = Math.max(acc.maxY, y);
-      return acc;
-    }, {
-      minX: Infinity,
-      minY: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity
-    });
-
-    if (imageBounds) {
-      console.log('----- imageBounds -----', imageBounds);
-      matrixBounds.minX = Math.min(matrixBounds.minX, imageBounds.x);
-      matrixBounds.minY = Math.min(matrixBounds.minY, imageBounds.y);
-      matrixBounds.maxX = Math.max(matrixBounds.maxX, imageBounds.x + imageBounds.width);
-      matrixBounds.maxY = Math.max(matrixBounds.maxY, imageBounds.y + imageBounds.height);
-    }
-
-    return {
-      ...matrixBounds,
-      width: matrixBounds.maxX - matrixBounds.minX || 500,
-      height: matrixBounds.maxY - matrixBounds.minY || 500,
-    };
-  };
-
-  const centerContainer = (bounds: { minX: number; minY: number; width: number; height: number }) => {
-    const contentCenterX = bounds.minX + bounds.width / 2;
-    const contentCenterY = bounds.minY + bounds.height / 2;
-    setPosition({
-      x: size.width / 2 - contentCenterX * scale,
-      y: size.height / 2 - contentCenterY * scale
-    });
-  }
 
   useLayoutEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
@@ -77,14 +48,12 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         const { width, height } = entry.contentRect;
         setSize({ width, height });
 
-        if (!isInitialized) {
-          let initialScale = 1;
-          const bounds = calculateContentBounds();
+        if (!isInitialized && bounds) {
 
           // 计算初始缩放比例，使内容适合视图
           const contentAspect = bounds.width / bounds.height;
           const containerAspect = width / height;
-
+          let initialScale = 1;
 
           if (contentAspect > containerAspect) {
             initialScale = width / bounds.width;
@@ -96,10 +65,18 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
           setScale(initialScale);
           console.log('----- initialScale -----', initialScale);
           console.log('----- bounds -----', bounds);
-          centerContainer(bounds);
+          // 计算居中位置
+          const contentCenterX = bounds.minX + bounds.width / 2;
+          const contentCenterY = bounds.minY + bounds.height / 2;
+
+          setPosition({
+            x: width / 2 - contentCenterX * initialScale,
+            y: height / 2 - contentCenterY * initialScale
+          });
 
           setIsInitialized(true);
         }
+
       }
     });
 
@@ -110,7 +87,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     return () => {
       resizeObserver.disconnect();
     };
-  }, [isInitialized]);
+  });
 
   useEffect(() => {
     if (!label) return;
@@ -280,6 +257,13 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     return polygons.find(p => p.id === selectedFigureId) as Polygon;
   }
 
+  // const deleteSelectedFigure = () => {
+  //   if (!selectedFigureId) return;
+  //   setPolygons(polygons.filter(p => p.id !== selectedFigureId));
+  //   setSelectedFigureId(null);
+  //   setTracePoint(null);
+  // }
+
   return (
     <div ref={containerRef}
       style={{
@@ -302,12 +286,12 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
           project.image &&
           <ImageLayer
             imageFile={project.image}
-            onBoundsChange={setImageBounds}
           />
         }
         <MatrixLayer
           matrixData={project.matrixData}
           matrixColor={project.matrixColor}
+          onBoundsChange={setBounds}
           scale={scale}
         />
 

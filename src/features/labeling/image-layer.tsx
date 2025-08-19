@@ -21,6 +21,8 @@ interface ImageTransform {
   scaleY: number;
   flipX: boolean;
   flipY: boolean;
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface Bounds {
@@ -33,8 +35,7 @@ export interface Bounds {
 const ImageLayer: React.FC<
   {
     imageFile: File,
-    onBoundsChange: (bounds: Bounds) => void
-  }> = ({ imageFile, onBoundsChange }) => {
+  }> = ({ imageFile }) => {
     const [image, setImage] = useState<ImageData>();
     const [transform, setTransform] = useState<ImageTransform>({
       x: 0,
@@ -46,57 +47,41 @@ const ImageLayer: React.FC<
       scaleY: 1,
       flipX: false,
       flipY: false,
+      offsetX: 0,
+      offsetY: 0,
     });
 
     const { projectRef } = useProjects();
     const imageRef = React.useRef<Konva.Image>(null);
     const transformerRef = React.useRef<Konva.Transformer>(null);
 
-    const handleBoundsChange = useCallback(() => {
-      if (imageRef.current && onBoundsChange) {
-        const rect = imageRef.current.getClientRect();
-        onBoundsChange({
-          x: 0,
-          y: 0,
-          width: rect.width,
-          height: rect.height
-        });
-      }
-    }, [onBoundsChange]);
-
     const handleFlipX = useCallback(() => {
       if (!imageRef.current) return;
-      const newFlipX = !transform.flipX;
-      const newScaleX = transform.scaleX * (newFlipX ? -1 : 1);
-      // 沿中轴线翻转：调整 x 坐标
-      const offsetX = imageRef.current.width() * transform.scaleX;
-      imageRef.current.x(imageRef.current.x() + offsetX * (-newScaleX));
+      const node = imageRef.current;
+      // 计算新的 scaleX
+      const newScaleX = -node.scaleX();
+
+      // 更新状态
       setTransform(prev => ({
         ...prev,
-        flipX: newFlipX,
-        scaleX: Math.abs(newScaleX),
+        scaleX: newScaleX,
+        flipX: !prev.flipX
       }));
+    }, []);
 
-      imageRef.current.scaleX(newScaleX);
-      imageRef.current.getLayer()?.batchDraw();
-    }, [transform]);
-
-    const handleFlipY = useCallback(() => {
+    const handleFlipY = () => {
       if (!imageRef.current) return;
-      const newFlipY = !transform.flipY;
-      const newScaleY = transform.scaleY * (newFlipY ? -1 : 1);
-      // 沿中轴线翻转：调整 y 坐标
-      const offsetY = imageRef.current.height() * transform.scaleY;
-      imageRef.current.y(imageRef.current.y() + offsetY * (-newScaleY));
+      const node = imageRef.current;
+      // 计算新的 scaleY
+      const newScaleY = -node.scaleY();
+
+      // 更新状态
       setTransform(prev => ({
         ...prev,
-        flipY: newFlipY,
-        scaleY: Math.abs(newScaleY),
+        scaleY: newScaleY,
+        flipY: !prev.flipY
       }));
-
-      imageRef.current.scaleY(newScaleY);
-      imageRef.current.getLayer()?.batchDraw();
-    }, [transform]);
+    };
 
     useImperativeHandle(projectRef, () => ({
       handleExport: () => {
@@ -145,13 +130,18 @@ const ImageLayer: React.FC<
             ...prev,
             width: img.width,
             height: img.height,
+            // @TODO 图片初始位置
+            x: img.width,
+            y: img.height,
+            offsetX: img.width / 2,
+            offsetY: img.height / 2
           }));
-          handleBoundsChange();
+
         };
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(imageFile);
-    }, [imageFile, handleBoundsChange]);
+    }, [imageFile]);
 
     useEffect(() => {
       if (imageRef.current && transformerRef.current) {
@@ -162,17 +152,19 @@ const ImageLayer: React.FC<
 
     const handleTransformEnd = () => {
       if (!imageRef.current) return;
-
+      console.log('transform end')
       const node = imageRef.current;
 
-      setTransform((prev) => ({
-        ...prev,
-        x: node.x(),
-        y: node.y(),
-        width: node.width(),
-        height: node.height(),
-        rotation: node.rotation(),
-      }));
+      setTransform((prev) => {
+        return {
+          ...prev,
+          x: node.x(),
+          y: node.y(),
+          width: node.width(),
+          height: node.height(),
+          rotation: node.rotation(),
+        }
+      });
     };
 
     if (!image) {
