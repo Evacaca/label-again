@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
 import { PolygonFigure } from "./figure";
@@ -40,6 +40,8 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [bounds, setBounds] = useState<Bounds | null>(null);
+
+  const [history, setHistory] = useState<Polygon[][]>([])
 
 
   useLayoutEffect(() => {
@@ -96,7 +98,6 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
       ...label,
       polygons: currentPolygons,
     };
-
     if (JSON.stringify(updatedLabel) !== JSON.stringify(label)) {
       onChange(updatedLabel);
     }
@@ -107,9 +108,9 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   }, [selectedFigureId])
 
   const handleClick = () => {
-    if (!label) return;
     const stage = stageRef.current;
     if (!stage) return;
+    if (!label) return;
 
     const pointerPosition = stage.getPointerPosition();
     if (!pointerPosition) return;
@@ -120,7 +121,8 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     };
     const currentPolygon = getSelectedFigure();
     console.log('------ add new polygon? -----', !currentPolygon || currentPolygon.finished);
-    if (!currentPolygon || currentPolygon.finished) {
+
+    if (!currentPolygon) {
       const newPolygon: Polygon = {
         labelId: label.id,
         id: genId(),
@@ -130,6 +132,10 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
       }
       setPolygons(prev => [...prev, newPolygon]);
       setSelectedFigureId(newPolygon.id);
+      return;
+    }
+    if (currentPolygon.finished) {
+      setSelectedFigureId(null);
       return;
     }
     console.log('----- draw current polygon -----', currentPolygon);
@@ -153,30 +159,31 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     setPosition({ x: e.target.x(), y: e.target.y() });
   }
 
-  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
+  const handleZoom = useCallback((direction: 'in' | 'out', e?: Konva.KonvaEventObject<WheelEvent>) => {
+    e?.evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
 
-    const pointer = stage.getPointerPosition();
-    if (!pointer) return;
+    const pointer = stage.getPointerPosition() || { x: size.width / 2, y: size.height / 2 };
 
-    const oldScale = scale;
     const mousePointTo = {
-      x: (pointer.x - position.x) / oldScale,
-      y: (pointer.y - position.y) / oldScale,
+      x: (pointer.x - position.x) / scale,
+      y: (pointer.y - position.y) / scale,
     };
 
-    // 缩放比例
     const scaleBy = 1.1;
-    // deltaY > 0 缩小  < 0 放大
-    const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+    const newScale = direction == 'out' ? scale / scaleBy : scale * scaleBy;
 
     setScale(newScale);
     setPosition({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     });
+  }, [scale, position, size])
+
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    const direction = e.evt.deltaY > 0 ? 'out' : 'in'
+    handleZoom(direction, e)
   }
 
   const handleMouseMove = useMemo(() => {
@@ -257,12 +264,42 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     return polygons.find(p => p.id === selectedFigureId) as Polygon;
   }
 
-  // const deleteSelectedFigure = () => {
-  //   if (!selectedFigureId) return;
-  //   setPolygons(polygons.filter(p => p.id !== selectedFigureId));
-  //   setSelectedFigureId(null);
-  //   setTracePoint(null);
-  // }
+  const deleteSelectedFigure = useCallback(() => {
+    if (!selectedFigureId) return;
+    if (!getSelectedFigure().finished) return;
+    setPolygons(polygons.filter(p => p.id !== selectedFigureId));
+    setSelectedFigureId(null);
+  }, [selectedFigureId])
+
+  const undo = useCallback(() => {
+
+  }, [])
+
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key == 'Delete' || e.key == 'Backspace') {
+        e.preventDefault();
+        deleteSelectedFigure()
+      }
+      if (e.key == '+' || e.key == '=') {
+        e.preventDefault();
+        handleZoom('in')
+      }
+      if (e.key == '-' || e.key == '_') {
+        e.preventDefault();
+        handleZoom('out')
+      }
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;
+      if (ctrlOrCmd && e.key == 'z') {
+        undo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  })
 
   return (
     <div ref={containerRef}
