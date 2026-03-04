@@ -82,7 +82,7 @@ export const rgbaToHex = (rgba: number[]) => {
       "#" +
       [r, g, b]
         .map((c) => {
-          const hex = Math.max(0, Math.min(255, Math.round(c))).toString(16);
+          const hex = Math.max(0, Math.min(255, Math.round(c || 0))).toString(16);
           return hex.length === 1 ? "0" + hex : hex;
         })
         .join("")
@@ -91,7 +91,8 @@ export const rgbaToHex = (rgba: number[]) => {
 
   // 将透明度转换为 2 位 HEX (0-255)
   const alphaToHex = (alpha: number) => {
-    const hex = Math.round(Math.max(0, Math.min(1, alpha)) * 255).toString(16);
+    const val = isNaN(alpha) ? 1 : alpha;
+    const hex = Math.round(Math.max(0, Math.min(1, val)) * 255).toString(16);
     return hex.length === 1 ? "0" + hex : hex;
   };
 

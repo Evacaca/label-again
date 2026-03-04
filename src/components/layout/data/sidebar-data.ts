@@ -4,6 +4,8 @@ import {
   FlipHorizontal,
   FlipVertical,
   Plus,
+  ListCheck,
+  HelpCircle,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -21,26 +23,26 @@ export const sidebarData: SidebarItem[] = [
     title: "Tools",
     items: [
       {
-        title: "flip image X axis",
+        title: "Flip Horizontally",
         key: "flipImageX",
         icon: FlipHorizontal,
         type: "action",
       },
       {
-        title: "flip image Y axis",
+        title: "Flip Vertically",
         key: "flipImageY",
         icon: FlipVertical,
         type: "action",
       },
       {
-        title: "export labels",
+        title: "Export Labels",
         key: "exportLabels",
         icon: Download,
         type: "action",
         url: "/export-labels",
       },
       {
-        title: "export image",
+        title: "Export Image",
         key: "exportImage",
         icon: FileOutput,
         type: "action",
@@ -51,11 +53,29 @@ export const sidebarData: SidebarItem[] = [
     title: "Projects",
     items: [
       {
-        title: "create project",
+        title: "New Project",
         key: "createProject",
         icon: Plus,
         type: "link",
         url: "/",
+      },
+      {
+        title: "All Projects",
+        key: "allProjects",
+        icon: ListCheck,
+        type: "link",
+        url: "/projects",
+      },
+    ],
+  },
+  {
+    title: "Other",
+    items: [
+      {
+        title: "Keyboard Shortcuts",
+        key: "showShortcuts",
+        icon: HelpCircle,
+        type: "action",
       },
     ],
   },

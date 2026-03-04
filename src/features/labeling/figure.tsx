@@ -19,6 +19,7 @@ interface FigureProps {
     finished: boolean;
     sketch: boolean;
     color: string;
+    radius?: number;
     vertexColor?: string;
     interactive: boolean;
     scale: number;
@@ -90,7 +91,7 @@ abstract class Figure extends Component<FigureProps, FigureState> {
     const strokeWidth = baseStrokeWidth / scale;
 
     // 根据缩放比例计算顶点半径
-    const baseVertexRadius = 6;
+    const baseVertexRadius = figure.radius || 6;
     const vertexRadius = baseVertexRadius / scale;
     const strokeColor = editing && sketch ? color : vertexColor || color;
     const fillColor = editing && sketch && !finished ? 'rgba(0,0,0,0)' : opacityColor(color, 0.2)

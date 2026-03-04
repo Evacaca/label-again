@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && touch dist/.nojekyll",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist -t"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -22,6 +23,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "color": "^5.0.0",
+    "idb-keyval": "^6.2.2",
     "immutability-helper": "^3.1.1",
     "js-cookie": "^3.0.5",
     "konva": "^9.3.22",
@@ -49,6 +51,7 @@
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "gh-pages": "^6.3.0",
     "globals": "^16.0.0",
     "tw-animate-css": "^1.3.4",
     "typescript": "~5.8.3",

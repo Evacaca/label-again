@@ -11,12 +11,16 @@ const polygon = z.object({
   id: z.string(),
   finished: z.boolean(),
   color: z.string(),
+  radius: z.number().optional(),
 });
 
 const labelSchema = z.object({
   id: z.string(),
   name: z.string().min(1, { message: "Label name is required" }),
   color: z.string(),
+  pointRadius: z.number().optional(),
+  minRadius: z.number().optional(),
+  maxRadius: z.number().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
   polygons: z.array(polygon).optional(),

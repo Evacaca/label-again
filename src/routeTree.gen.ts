@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as labelRouteRouteImport } from './routes/(label)/route'
 import { Route as RouteRouteImport } from './routes/route'
 import { Route as labelLabelIdRouteImport } from './routes/(label)/$labelId'
 
+const ProjectsRoute = ProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const labelRouteRoute = labelRouteRouteImport.update({
   id: '/(label)',
   getParentRoute: () => rootRouteImport,
@@ -30,33 +36,44 @@ const labelLabelIdRoute = labelLabelIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof labelRouteRouteWithChildren
+  '/projects': typeof ProjectsRoute
   '/$labelId': typeof labelLabelIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof labelRouteRouteWithChildren
+  '/projects': typeof ProjectsRoute
   '/$labelId': typeof labelLabelIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof RouteRoute
   '/(label)': typeof labelRouteRouteWithChildren
+  '/projects': typeof ProjectsRoute
   '/(label)/$labelId': typeof labelLabelIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$labelId'
+  fullPaths: '/' | '/projects' | '/$labelId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$labelId'
-  id: '__root__' | '/' | '/(label)' | '/(label)/$labelId'
+  to: '/' | '/projects' | '/$labelId'
+  id: '__root__' | '/' | '/(label)' | '/projects' | '/(label)/$labelId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   RouteRoute: typeof RouteRoute
   labelRouteRoute: typeof labelRouteRouteWithChildren
+  ProjectsRoute: typeof ProjectsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/projects': {
+      id: '/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(label)': {
       id: '/(label)'
       path: '/'
@@ -96,6 +113,7 @@ const labelRouteRouteWithChildren = labelRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   RouteRoute: RouteRoute,
   labelRouteRoute: labelRouteRouteWithChildren,
+  ProjectsRoute: ProjectsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

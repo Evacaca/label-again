@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from '@tanstack/react-router';
 import { useProjects } from '@/context/project-context';
+import { genId } from '../labeling/utils';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Label name is required' }),
@@ -39,9 +40,10 @@ export default function Project() {
       console.log(matrixData)
     }
     const project: Project = {
-      id: '__project__' + crypto.randomUUID(),
+      id: '__project__' + genId(),
       ...values,
       matrixData,
+      createdAt: new Date(),
     }
     addProject(project)
     navigate({ to: '/$labelId', params: { labelId: project.id } });
@@ -202,6 +204,9 @@ export default function Project() {
         </CardContent>
         <CardFooter>
           <Button type='submit' form="project-form">Save</Button>
+          <Button variant='secondary' className='ml-2' onClick={() => {
+            navigate({ to: '/projects' })
+          }}>Already have a project?</Button>
         </CardFooter>
       </Card>
     </div>

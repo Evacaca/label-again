@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Label } from '../data/schema';
 import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -9,10 +10,14 @@ import { Button } from '@/components/ui/button';
 import { useLabels } from '../context/labels-context';
 import { rgbaToHex } from '@/lib/utils';
 import { ColorPicker, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerFormat, ColorPickerHue, ColorPickerOutput, ColorPickerSelection } from '@/components/ui/shadcn-io/color-picker';
+import { genId } from '@/features/labeling/utils';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Label name is required' }),
   color: z.string(),
+  pointRadius: z.number().optional(),
+  minRadius: z.number().optional(),
+  maxRadius: z.number().optional(),
 })
 
 type UserForm = z.infer<typeof formSchema>
@@ -28,8 +33,17 @@ export const LabelActionDialog = ({ open, onOpenChange, currentRow }: Props) => 
   const isEdit = !!currentRow;
   const form = useForm<UserForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: currentRow
+    defaultValues: {
+      ...currentRow,
+    }
   })
+
+  // 当对话框打开或数据变化时，重置表单
+  useEffect(() => {
+    if (open) {
+      form.reset(currentRow || { name: '', color: '#000000' })
+    }
+  }, [open, currentRow, form])
 
   const onSubmit = async (values: UserForm) => {
     console.log('formValues', values)
@@ -37,7 +51,7 @@ export const LabelActionDialog = ({ open, onOpenChange, currentRow }: Props) => 
       updateLabel({ ...currentRow, ...values })
     } else {
       const label: Label = {
-        id: crypto.randomUUID(),
+        id: genId(),
         ...values,
       }
       setLabels(prev => [...prev, label])
@@ -69,7 +83,8 @@ export const LabelActionDialog = ({ open, onOpenChange, currentRow }: Props) => 
               <FormLabel>Label Color</FormLabel>
               <FormControl>
                 <ColorPicker
-                  defaultValue={currentRow?.color}
+                  key={currentRow?.id || 'new'}
+                  defaultValue={field.value}
                   onChange={(rgba) => {
                     field.onChange(rgbaToHex(rgba as number[]));
                   }}

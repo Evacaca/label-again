@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
 import { PolygonFigure } from "./figure";
@@ -20,13 +20,6 @@ interface CanvasProps {
   onSelectFigure: (figure: Polygon) => void;
 }
 
-interface CanvasState {
-  polygons: Polygon[];
-  selectedFigureId: string | null;
-  scale: number;
-  position: Point;
-}
-
 const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSelectFigure }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const stageRef = React.useRef<Konva.Stage>(null);
@@ -41,7 +34,13 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   const [isInitialized, setIsInitialized] = useState(false);
   const [bounds, setBounds] = useState<Bounds | null>(null);
 
-  const [history, setHistory] = useState<Polygon[][]>([])
+  const [history, setHistory] = useState<Polygon[][]>([]);
+  const [redoStack, setRedoStack] = useState<Polygon[][]>([]);
+
+  const pushToHistory = (currentPolygons: Polygon[]) => {
+    setHistory(prev => [...prev, currentPolygons]);
+    setRedoStack([]); // Clear redo stack on new action
+  }
 
 
   useLayoutEffect(() => {
@@ -123,6 +122,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     console.log('------ add new polygon? -----', !currentPolygon || currentPolygon.finished);
 
     if (!currentPolygon) {
+      pushToHistory(polygons);
       const newPolygon: Polygon = {
         labelId: label.id,
         id: genId(),
@@ -213,6 +213,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   }, [selectedFigureId, position, scale]);
 
   const handleFigureChange = (type: string, payload: { point?: Point, pos?: number, figure: Polygon }) => {
+    pushToHistory(polygons);
     switch (type) {
       case 'move':
         {
@@ -266,14 +267,32 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
 
   const deleteSelectedFigure = useCallback(() => {
     if (!selectedFigureId) return;
-    if (!getSelectedFigure().finished) return;
+    const figure = getSelectedFigure();
+    if (!figure || !figure.finished) return;
+    pushToHistory(polygons);
     setPolygons(polygons.filter(p => p.id !== selectedFigureId));
     setSelectedFigureId(null);
-  }, [selectedFigureId])
+  }, [selectedFigureId, polygons])
 
   const undo = useCallback(() => {
+    if (history.length === 0) return;
 
-  }, [])
+    const previousState = history[history.length - 1];
+    setHistory(history.slice(0, history.length - 1));
+
+    setRedoStack(prev => [polygons, ...prev]);
+    setPolygons(previousState);
+  }, [history, polygons]);
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return;
+
+    const nextState = redoStack[0];
+    setRedoStack(redoStack.slice(1));
+
+    setHistory(prev => [...prev, polygons]);
+    setPolygons(nextState);
+  }, [redoStack, polygons]);
 
 
   useEffect(() => {
@@ -291,8 +310,17 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         handleZoom('out')
       }
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
-      if (ctrlOrCmd && e.key == 'z') {
-        undo()
+      if (ctrlOrCmd && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+      if (ctrlOrCmd && e.key === 'y') {
+        e.preventDefault();
+        redo();
       }
     }
     window.addEventListener('keydown', handleKeyDown)

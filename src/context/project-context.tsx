@@ -1,11 +1,14 @@
 import React, { useRef } from "react";
 import type { Project } from "./data/schema";
+import { set, values, del } from 'idb-keyval';
 
 interface ProjectContextType {
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
-  addProject: (project: Project) => void;
+  addProject: (project: Project) => Promise<void>;
   getProject: (id: string) => Project | null;
+  updateProject: (project: Project) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   projectRef: React.RefObject<{ handleExport: () => void; handleFlipX: () => void; handleFlipY: () => void } | null>;
   exportImage: () => void;
   flipImageX: () => void;
@@ -20,36 +23,37 @@ interface Props {
 
 export default function ProjectProvider({ children }: Props) {
   const [projects, setProjects] = React.useState<Project[]>([]);
-  const projectRef = useRef<{ 
-    handleExport: () => void; 
-    handleFlipX: () => void; 
+  const projectRef = useRef<{
+    handleExport: () => void;
+    handleFlipX: () => void;
     handleFlipY: () => void;
   }>(null);
 
-  // 从 localStorage 加载项目数据
+  // 从 IndexedDB 加载项目数据
   React.useEffect(() => {
-    const loadProjects = () => {
-      const projectIds = Object.keys(localStorage).filter(id => id.startsWith('__project__'));
-      const loadedProjects = projectIds
-        .map(id => {
-          try {
-            const projectData = localStorage.getItem(id);
-            return projectData ? JSON.parse(projectData) as Project : null;
-          } catch (e) {
-            console.error('Error parsing project data:', e);
-            return null;
-          }
-        })
-        .filter((project): project is Project => project !== null);
-      setProjects(loadedProjects);
+    const loadProjects = async () => {
+      const allProjects = await values<Project>();
+      setProjects(allProjects);
     };
 
     loadProjects();
   }, []);
 
-  const addProject = React.useCallback((project: Project) => {
+  const updateProject = React.useCallback(async (project: Project) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === project.id ? project : p))
+    );
+    await set(project.id, project);
+  }, []);
+
+  const deleteProject = React.useCallback(async (id: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    await del(id);
+  }, []);
+
+  const addProject = React.useCallback(async (project: Project) => {
     setProjects(prev => [...prev, project]);
-    localStorage.setItem(project.id, JSON.stringify(project));
+    await set(project.id, project);
   }, []);
 
   const getProject = React.useCallback((id: string) => {
@@ -74,6 +78,8 @@ export default function ProjectProvider({ children }: Props) {
       setProjects,
       addProject,
       getProject,
+      updateProject,
+      deleteProject,
       projectRef,
       exportImage,
       flipImageX,
