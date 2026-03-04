@@ -1,0 +1,1 @@
+function s(){return Math.random().toString(36).substring(2,15)+Math.random().toString(36).substring(2,15)}function r(t,n){return t.startsWith("#")?`rgba(${parseInt(t.slice(1,3),16)}, ${parseInt(t.slice(3,5),16)}, ${parseInt(t.slice(5,7),16)}, ${n})`:t}export{s as g,r as o};
