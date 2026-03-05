@@ -108,8 +108,8 @@ abstract class Figure extends Component<FigureProps, FigureState> {
           dash={dashArray}
           fillRule="evenodd"
           onClick={(e: Konva.KonvaEventObject<MouseEvent>) => {
-            e.cancelBubble = true;
             if (interactive) {
+              e.cancelBubble = true;
               options.onSelect();
             }
           }}

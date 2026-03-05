@@ -11,11 +11,19 @@ import { Button } from "@/components/ui/button";
 
 export function NavGroup({ title, items }: SidebarItem) {
   const { labels } = useLabels()
-  const { exportImage, flipImageX, flipImageY, getProject } = useProjects()
+  const { exportImage, flipImageX, flipImageY, getProject, setEditProjectOpen, toggleImageLock, isImageLocked } = useProjects()
   const navigate = useNavigate();
   const { labelId } = useParams({ strict: false }) as { labelId?: string };
   const project = labelId ? getProject(labelId) : null;
   const hasImage = !!project?.image;
+
+  // 构建当前状态快照，用于传递给配置中的判断函数
+  const stateSnapshot = {
+    project,
+    hasImage,
+    isImageLocked,
+    hasLabels: labels.length > 0,
+  };
 
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
@@ -36,19 +44,28 @@ export function NavGroup({ title, items }: SidebarItem) {
   }
 
   const handleClickButton = (item: SidebarItem['items'][0]) => {
+    const isDisabled = item.disabled?.(stateSnapshot);
+    if (isDisabled) return;
+
     if (item.type === 'action') {
       switch (item.key) {
         case 'exportLabels':
           exportLabels();
           break;
         case 'exportImage':
-          if (hasImage) exportImage();
+          exportImage();
           break;
         case 'flipImageX':
-          if (hasImage) flipImageX();
+          flipImageX();
           break;
         case 'flipImageY':
-          if (hasImage) flipImageY();
+          flipImageY();
+          break;
+        case 'lockImageLayer':
+          toggleImageLock();
+          break;
+        case 'editProject':
+          setEditProjectOpen(true);
           break;
         case 'showShortcuts':
           setShortcutsOpen(!shortcutsOpen);
@@ -71,16 +88,21 @@ export function NavGroup({ title, items }: SidebarItem) {
             {
               items.map((item) => {
                 const isShortcuts = item.key === 'showShortcuts';
-                const isImageAction = ['exportImage', 'flipImageX', 'flipImageY'].includes(item.key);
-                const isDisabled = isImageAction && !hasImage;
+                const isDisabled = item.disabled?.(stateSnapshot);
+                const isActive = item.isActive?.(stateSnapshot);
+
+                // 解析图标和标题（可能是函数也可能是静态值）
+                const Icon = typeof item.icon === 'function' ? item.icon(stateSnapshot) : item.icon;
+                const itemTitle = typeof item.title === 'function' ? item.title(stateSnapshot) : item.title;
 
                 const button = (
                   <SidebarMenuButton
                     onClick={() => handleClickButton(item)}
                     disabled={isDisabled}
+                    isActive={isActive}
                   >
-                    <item.icon />
-                    <span className="max-w-52 text-wrap">{item.title}</span>
+                    <Icon />
+                    <span className="max-w-52 text-wrap">{itemTitle}</span>
                   </SidebarMenuButton>
                 );
 

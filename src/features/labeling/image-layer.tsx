@@ -51,7 +51,7 @@ const ImageLayer: React.FC<
       offsetY: 0,
     });
 
-    const { projectRef } = useProjects();
+    const { projectRef, isImageLocked } = useProjects();
     const imageRef = React.useRef<Konva.Image>(null);
     const transformerRef = React.useRef<Konva.Transformer>(null);
 
@@ -177,14 +177,17 @@ const ImageLayer: React.FC<
           ref={imageRef}
           image={image.imgObj}
           {...transform}
-          draggable
+          draggable={!isImageLocked}
           onDragStart={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
           }}
           onDragMove={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
           }}
           onDragEnd={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
             setTransform(prev => ({
               ...prev,
@@ -193,18 +196,23 @@ const ImageLayer: React.FC<
             }));
           }}
           onTransformStart={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
           }}
           onTransform={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
           }}
           onTransformEnd={(e) => {
+            if (isImageLocked) return;
             e.evt.stopPropagation();
             handleTransformEnd();
           }}
         />
         <Transformer
           ref={transformerRef}
+          visible={!isImageLocked}
+          listening={!isImageLocked}
           boundBoxFunc={(oldBox, newBox) => {
             // 限制最小尺寸
             const minWidth = 20;

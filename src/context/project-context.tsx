@@ -13,6 +13,10 @@ interface ProjectContextType {
   exportImage: () => void;
   flipImageX: () => void;
   flipImageY: () => void;
+  editProjectOpen: boolean;
+  setEditProjectOpen: (open: boolean) => void;
+  isImageLocked: boolean;
+  toggleImageLock: () => void;
 }
 
 const ProjectContext = React.createContext<ProjectContextType | null>(null)
@@ -28,6 +32,8 @@ export default function ProjectProvider({ children }: Props) {
     handleFlipX: () => void;
     handleFlipY: () => void;
   }>(null);
+  const [editProjectOpen, setEditProjectOpen] = React.useState(false);
+  const [isImageLocked, setIsImageLocked] = React.useState(false);
 
   // 从 IndexedDB 加载项目数据
   React.useEffect(() => {
@@ -72,6 +78,10 @@ export default function ProjectProvider({ children }: Props) {
     projectRef.current?.handleFlipY();
   }
 
+  const toggleImageLock = () => {
+    setIsImageLocked(prev => !prev);
+  }
+
   return (
     <ProjectContext.Provider value={{
       projects,
@@ -84,6 +94,10 @@ export default function ProjectProvider({ children }: Props) {
       exportImage,
       flipImageX,
       flipImageY,
+      editProjectOpen,
+      setEditProjectOpen,
+      isImageLocked,
+      toggleImageLock,
     }}>
       {children}
     </ProjectContext.Provider>

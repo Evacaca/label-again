@@ -13,6 +13,9 @@ interface LabelsContextType {
   labels: Label[];
   setLabels: React.Dispatch<React.SetStateAction<Label[]>>;
   updateLabel: (updatedLabel: Label) => void;
+  hiddenLabelIds: Set<string>;
+  toggleLabelHidden: (labelId: string) => void;
+  isLabelHidden: (labelId: string) => boolean;
 }
 
 const LabelsContext = React.createContext<LabelsContextType | null>(null)
@@ -25,15 +28,43 @@ export default function LabelsProvider({ children }: Props) {
   const [open, setOpen] = useDialogState<LabelsDialogType>(null);
   const [currentLabel, setCurrentLabel] = React.useState<Label | null>(null);
   const [labels, setLabels] = React.useState<Label[]>([]);
+  const [hiddenLabelIds, setHiddenLabelIds] = React.useState<Set<string>>(() => new Set());
 
   const updateLabel = React.useCallback((updatedLabel: Label) => {
     setLabels(prev => prev.map(label => label.id === updatedLabel.id ? { ...label, ...updatedLabel } : label))
   }, [setLabels])
 
+  const toggleLabelHidden = React.useCallback((labelId: string) => {
+    setHiddenLabelIds(prev => {
+      const next = new Set(prev);
+      if (next.has(labelId)) {
+        next.delete(labelId);
+      } else {
+        next.add(labelId);
+      }
+      return next;
+    });
+  }, []);
+
+  const isLabelHidden = React.useCallback((labelId: string) => {
+    return hiddenLabelIds.has(labelId);
+  }, [hiddenLabelIds]);
+
   return (
-    <LabelsContext value={{ open, setOpen, currentLabel, setCurrentLabel, labels, setLabels, updateLabel }}>
+    <LabelsContext.Provider value={{
+      open,
+      setOpen,
+      currentLabel,
+      setCurrentLabel,
+      labels,
+      setLabels,
+      updateLabel,
+      hiddenLabelIds,
+      toggleLabelHidden,
+      isLabelHidden,
+    }}>
       {children}
-    </LabelsContext>
+    </LabelsContext.Provider>
   )
 }
 

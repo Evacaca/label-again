@@ -1,3 +1,4 @@
+import { type Project } from "@/context/data/schema";
 import {
   Download,
   FileOutput,
@@ -6,18 +7,31 @@ import {
   Plus,
   ListCheck,
   HelpCircle,
+  PencilLine,
+  Lock,
+  Unlock,
 } from "lucide-react";
+
+export interface SidebarState {
+  project: Project | null;
+  hasImage: boolean;
+  isImageLocked: boolean;
+  hasLabels: boolean;
+}
 
 export interface SidebarItem {
   title: string;
   items: {
     key: string;
-    title: string;
-    icon: React.ElementType;
+    title: string | ((state: SidebarState) => string);
+    icon: React.ElementType | ((state: SidebarState) => React.ElementType);
     type: "link" | "action";
     url?: string;
+    disabled?: (state: SidebarState) => boolean;
+    isActive?: (state: SidebarState) => boolean;
   }[];
 }
+
 export const sidebarData: SidebarItem[] = [
   {
     title: "Tools",
@@ -27,25 +41,35 @@ export const sidebarData: SidebarItem[] = [
         key: "flipImageX",
         icon: FlipHorizontal,
         type: "action",
+        disabled: (s) => !s.hasImage,
       },
       {
         title: "Flip Vertically",
         key: "flipImageY",
         icon: FlipVertical,
         type: "action",
+        disabled: (s) => !s.hasImage,
+      },
+      {
+        title: (s) =>
+          s.isImageLocked ? "Unlock Image Layer" : "Lock Image Layer",
+        key: "lockImageLayer",
+        icon: (s: SidebarState) => (s.isImageLocked ? Unlock : Lock),
+        type: "action",
+        disabled: (s) => !s.hasImage,
       },
       {
         title: "Export Labels",
         key: "exportLabels",
         icon: Download,
         type: "action",
-        url: "/export-labels",
       },
       {
         title: "Export Image",
         key: "exportImage",
         icon: FileOutput,
         type: "action",
+        disabled: (s) => !s.hasImage,
       },
     ],
   },
@@ -53,14 +77,21 @@ export const sidebarData: SidebarItem[] = [
     title: "Projects",
     items: [
       {
-        title: "New Project",
+        title: "Edit",
+        key: "editProject",
+        icon: PencilLine,
+        type: "action",
+        disabled: (s) => !s.project,
+      },
+      {
+        title: "New",
         key: "createProject",
         icon: Plus,
         type: "link",
         url: "/",
       },
       {
-        title: "All Projects",
+        title: "All",
         key: "allProjects",
         icon: ListCheck,
         type: "link",

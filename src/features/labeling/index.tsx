@@ -9,7 +9,7 @@ export default function Labeling() {
   const { getProject } = useProjects();
   const { labelId } = useParams({ from: '/(label)/$labelId' })
   const project = getProject(labelId);
-  const { currentLabel, updateLabel, labels, setCurrentLabel } = useLabels();
+  const { currentLabel, updateLabel, labels, setCurrentLabel, hiddenLabelIds } = useLabels();
 
   const [figures, setFigures] = useState<Polygon[]>([])
 
@@ -26,6 +26,7 @@ export default function Labeling() {
   useEffect(() => {
     const newFigures: Polygon[] = [];
     labels.forEach(label => {
+      if (hiddenLabelIds.has(label.id)) return;
       label.polygons?.forEach(polygon => {
         newFigures.push({
           ...polygon,
@@ -36,7 +37,7 @@ export default function Labeling() {
       });
     });
     setFigures(newFigures);
-  }, [labels]);
+  }, [labels, hiddenLabelIds]);
   if (!project) return <div>Project not found</div>;
   return (
     <Canvas {...{ project, label: currentLabel, figures, onChange: updateLabel, onSelectFigure: getCurrentLabel }} />

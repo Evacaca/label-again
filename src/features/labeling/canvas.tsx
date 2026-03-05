@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
 import { PolygonFigure } from "./figure";
@@ -20,7 +26,13 @@ interface CanvasProps {
   onSelectFigure: (figure: Polygon) => void;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSelectFigure }) => {
+const Canvas: React.FC<CanvasProps> = ({
+  project,
+  label,
+  figures,
+  onChange,
+  onSelectFigure,
+}) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const stageRef = React.useRef<Konva.Stage>(null);
 
@@ -38,10 +50,9 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
   const [redoStack, setRedoStack] = useState<Polygon[][]>([]);
 
   const pushToHistory = (currentPolygons: Polygon[]) => {
-    setHistory(prev => [...prev, currentPolygons]);
+    setHistory((prev) => [...prev, currentPolygons]);
     setRedoStack([]); // Clear redo stack on new action
-  }
-
+  };
 
   useLayoutEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
@@ -50,7 +61,6 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         setSize({ width, height });
 
         if (!isInitialized && bounds) {
-
           // 计算初始缩放比例，使内容适合视图
           const contentAspect = bounds.width / bounds.height;
           const containerAspect = width / height;
@@ -64,20 +74,19 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
           initialScale = Math.min(1, initialScale * 0.8);
 
           setScale(initialScale);
-          console.log('----- initialScale -----', initialScale);
-          console.log('----- bounds -----', bounds);
+          console.log("----- initialScale -----", initialScale);
+          console.log("----- bounds -----", bounds);
           // 计算居中位置
           const contentCenterX = bounds.minX + bounds.width / 2;
           const contentCenterY = bounds.minY + bounds.height / 2;
 
           setPosition({
             x: width / 2 - contentCenterX * initialScale,
-            y: height / 2 - contentCenterY * initialScale
+            y: height / 2 - contentCenterY * initialScale,
           });
 
           setIsInitialized(true);
         }
-
       }
     });
 
@@ -92,7 +101,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
 
   useEffect(() => {
     if (!label) return;
-    const currentPolygons = polygons.filter(p => p.labelId === label.id);
+    const currentPolygons = polygons.filter((p) => p.labelId === label.id);
     const updatedLabel = {
       ...label,
       polygons: currentPolygons,
@@ -104,7 +113,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
 
   useEffect(() => {
     onSelectFigure(getSelectedFigure());
-  }, [selectedFigureId])
+  }, [selectedFigureId]);
 
   const handleClick = () => {
     const stage = stageRef.current;
@@ -119,7 +128,10 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
       y: (pointerPosition.y - position.y) / scale,
     };
     const currentPolygon = getSelectedFigure();
-    console.log('------ add new polygon? -----', !currentPolygon || currentPolygon.finished);
+    console.log(
+      "------ add new polygon? -----",
+      !currentPolygon || currentPolygon.finished,
+    );
 
     if (!currentPolygon) {
       pushToHistory(polygons);
@@ -128,9 +140,9 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         id: genId(),
         points: [newPoint],
         finished: false,
-        color: label.color
-      }
-      setPolygons(prev => [...prev, newPolygon]);
+        color: label.color,
+      };
+      setPolygons((prev) => [...prev, newPolygon]);
       setSelectedFigureId(newPolygon.id);
       return;
     }
@@ -138,53 +150,58 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
       setSelectedFigureId(null);
       return;
     }
-    console.log('----- draw current polygon -----', currentPolygon);
-    handleFigureChange('add', { point: newPoint, figure: currentPolygon! })
-  }
+    console.log("----- draw current polygon -----", currentPolygon);
+    handleFigureChange("add", { point: newPoint, figure: currentPolygon! });
+  };
 
   // 检查是否靠近起点
   const isNearFirstPoint = (point: Point, points: Point[]) => {
     if (points.length < 3) return false;
     const firstPoint = points[0];
     const distance = Math.sqrt(
-      Math.pow(point.x - firstPoint.x, 2) +
-      Math.pow(point.y - firstPoint.y, 2)
+      Math.pow(point.x - firstPoint.x, 2) + Math.pow(point.y - firstPoint.y, 2),
     );
     return distance < 10 / scale;
-  }
+  };
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     // 当拖拽的是 Stage 本身时才更新位置
     if (e.target !== stageRef.current) return;
     setPosition({ x: e.target.x(), y: e.target.y() });
-  }
+  };
 
-  const handleZoom = useCallback((direction: 'in' | 'out', e?: Konva.KonvaEventObject<WheelEvent>) => {
-    e?.evt.preventDefault();
-    const stage = stageRef.current;
-    if (!stage) return;
+  const handleZoom = useCallback(
+    (direction: "in" | "out", e?: Konva.KonvaEventObject<WheelEvent>) => {
+      e?.evt.preventDefault();
+      const stage = stageRef.current;
+      if (!stage) return;
 
-    const pointer = stage.getPointerPosition() || { x: size.width / 2, y: size.height / 2 };
+      const pointer = stage.getPointerPosition() || {
+        x: size.width / 2,
+        y: size.height / 2,
+      };
 
-    const mousePointTo = {
-      x: (pointer.x - position.x) / scale,
-      y: (pointer.y - position.y) / scale,
-    };
+      const mousePointTo = {
+        x: (pointer.x - position.x) / scale,
+        y: (pointer.y - position.y) / scale,
+      };
 
-    const scaleBy = 1.1;
-    const newScale = direction == 'out' ? scale / scaleBy : scale * scaleBy;
+      const scaleBy = 1.1;
+      const newScale = direction == "out" ? scale / scaleBy : scale * scaleBy;
 
-    setScale(newScale);
-    setPosition({
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    });
-  }, [scale, position, size])
+      setScale(newScale);
+      setPosition({
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+      });
+    },
+    [scale, position, size],
+  );
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    const direction = e.evt.deltaY > 0 ? 'out' : 'in'
-    handleZoom(direction, e)
-  }
+    const direction = e.evt.deltaY > 0 ? "out" : "in";
+    handleZoom(direction, e);
+  };
 
   const handleMouseMove = useMemo(() => {
     let lastUpdate = 0;
@@ -212,67 +229,91 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     };
   }, [selectedFigureId, position, scale]);
 
-  const handleFigureChange = (type: string, payload: { point?: Point, pos?: number, figure: Polygon }) => {
+  const handleFigureChange = (
+    type: string,
+    payload: { point?: Point; pos?: number; figure: Polygon },
+  ) => {
     pushToHistory(polygons);
     switch (type) {
-      case 'move':
-        {
-          const { point, pos, figure } = payload;
-          const newPoints = [...figure.points || []];
-          newPoints[pos as number] = point as Point;
-          setPolygons(polygons.map(p => p.id === figure.id ? { ...p, points: newPoints } : p));
-          break;
+      case "move": {
+        const { point, pos, figure } = payload;
+        const newPoints = [...(figure.points || [])];
+        newPoints[pos as number] = point as Point;
+        setPolygons(
+          polygons.map((p) =>
+            p.id === figure.id ? { ...p, points: newPoints } : p,
+          ),
+        );
+        break;
+      }
+      case "add": {
+        const { point: newPoint, pos: insertPos, figure } = payload;
+        if (insertPos !== undefined) {
+          const pointsWithNew = [...figure.points];
+          pointsWithNew.splice(insertPos, 0, newPoint as Point);
+          setPolygons(
+            polygons.map((p) =>
+              p.id === figure.id ? { ...p, points: pointsWithNew } : p,
+            ),
+          );
+        } else if (isNearFirstPoint(newPoint as Point, figure.points)) {
+          handleFigureChange("end", { figure });
+        } else {
+          const pointsWithNew = [...figure.points, newPoint as Point];
+          setPolygons(
+            polygons.map((p) =>
+              p.id === figure.id ? { ...p, points: pointsWithNew } : p,
+            ),
+          );
+          setTracePoint(newPoint as Point);
         }
-      case 'add':
-        {
-          const { point: newPoint, pos: insertPos, figure } = payload;
-          if (insertPos !== undefined) {
-            const pointsWithNew = [...figure.points];
-            pointsWithNew.splice(insertPos, 0, newPoint as Point);
-            setPolygons(polygons.map(p => p.id === figure.id ? { ...p, points: pointsWithNew } : p));
-          }
-          else if (isNearFirstPoint(newPoint as Point, figure.points)) {
-            handleFigureChange('end', { figure });
-          } else {
-            const pointsWithNew = [...figure.points, newPoint as Point];
-            setPolygons(polygons.map(p => p.id === figure.id ? { ...p, points: pointsWithNew } : p));
-            setTracePoint(newPoint as Point);
-          }
-          break;
-        }
-      case 'remove':
-        {
-          const { pos: removePos, figure } = payload;
-          const remainingPoints = figure?.points.filter((_, i) => i !== removePos) || [];
-          setPolygons(polygons.map(p => p.id === figure.id ? { ...p, points: remainingPoints } : p));
-          break;
-        }
-      case 'end':
-        {
-          const { figure } = payload;
-          figure.finished = true;
-          setPolygons(prev => prev.map(p => p.id === figure.id ? { ...figure, finished: true } : p));
-          setTracePoint(null);
-          setSelectedFigureId(null);
-          break;
-        }
+        break;
+      }
+      case "remove": {
+        const { pos: removePos, figure } = payload;
+        const remainingPoints =
+          figure?.points.filter((_, i) => i !== removePos) || [];
+        setPolygons(
+          polygons.map((p) =>
+            p.id === figure.id ? { ...p, points: remainingPoints } : p,
+          ),
+        );
+        break;
+      }
+      case "end": {
+        const { figure } = payload;
+        figure.finished = true;
+        setPolygons((prev) =>
+          prev.map((p) =>
+            p.id === figure.id ? { ...figure, finished: true } : p,
+          ),
+        );
+        setTracePoint(null);
+        setSelectedFigureId(null);
+        break;
+      }
       default:
-        throw new Error('unknown event type ' + type);
+        throw new Error("unknown event type " + type);
     }
-  }
+  };
 
   const getSelectedFigure = () => {
-    return polygons.find(p => p.id === selectedFigureId) as Polygon;
-  }
+    return polygons.find((p) => p.id === selectedFigureId) as Polygon;
+  };
+
+  const currentDrawingFigure = polygons.find(
+    (p) => p.id === selectedFigureId && !p.finished,
+  );
+  const isDrawing = !!currentDrawingFigure;
 
   const deleteSelectedFigure = useCallback(() => {
     if (!selectedFigureId) return;
     const figure = getSelectedFigure();
     if (!figure || !figure.finished) return;
     pushToHistory(polygons);
-    setPolygons(polygons.filter(p => p.id !== selectedFigureId));
+    setPolygons(polygons.filter((p) => p.id !== selectedFigureId));
     setSelectedFigureId(null);
-  }, [selectedFigureId, polygons])
+  }, [selectedFigureId, polygons]);
 
   const undo = useCallback(() => {
     if (history.length === 0) return;
@@ -280,7 +321,7 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     const previousState = history[history.length - 1];
     setHistory(history.slice(0, history.length - 1));
 
-    setRedoStack(prev => [polygons, ...prev]);
+    setRedoStack((prev) => [polygons, ...prev]);
     setPolygons(previousState);
   }, [history, polygons]);
 
@@ -290,27 +331,26 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
     const nextState = redoStack[0];
     setRedoStack(redoStack.slice(1));
 
-    setHistory(prev => [...prev, polygons]);
+    setHistory((prev) => [...prev, polygons]);
     setPolygons(nextState);
   }, [redoStack, polygons]);
 
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key == 'Delete' || e.key == 'Backspace') {
+      if (e.key == "Delete" || e.key == "Backspace") {
         e.preventDefault();
-        deleteSelectedFigure()
+        deleteSelectedFigure();
       }
-      if (e.key == '+' || e.key == '=') {
+      if (e.key == "+" || e.key == "=") {
         e.preventDefault();
-        handleZoom('in')
+        handleZoom("in");
       }
-      if (e.key == '-' || e.key == '_') {
+      if (e.key == "-" || e.key == "_") {
         e.preventDefault();
-        handleZoom('out')
+        handleZoom("out");
       }
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
-      if (ctrlOrCmd && e.key === 'z') {
+      if (ctrlOrCmd && e.key === "z") {
         e.preventDefault();
         if (e.shiftKey) {
           redo();
@@ -318,23 +358,26 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
           undo();
         }
       }
-      if (ctrlOrCmd && e.key === 'y') {
+      if (ctrlOrCmd && e.key === "y") {
         e.preventDefault();
         redo();
       }
-    }
-    window.addEventListener('keydown', handleKeyDown)
+    };
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  })
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [deleteSelectedFigure, handleZoom, undo, redo]);
 
   return (
-    <div ref={containerRef}
+    <div
+      ref={containerRef}
       style={{
-        cursor: selectedFigureId ? 'crosshair' : 'grab',
-        width: '100%', height: '100%'
-      }}>
+        cursor: selectedFigureId ? "crosshair" : "grab",
+        width: "100%",
+        height: "100%",
+      }}
+    >
       <Stage
         ref={stageRef}
         width={size.width}
@@ -346,13 +389,9 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         onWheel={handleWheel}
         onMouseMove={handleMouseMove}
         x={position.x}
-        y={position.y}>
-        {
-          project.image &&
-          <ImageLayer
-            imageFile={project.image}
-          />
-        }
+        y={position.y}
+      >
+        {project.image && <ImageLayer imageFile={project.image} />}
         <MatrixLayer
           matrixData={project.matrixData}
           matrixColor={project.matrixColor}
@@ -361,31 +400,35 @@ const Canvas: React.FC<CanvasProps> = ({ project, label, figures, onChange, onSe
         />
 
         <Layer>
-          {
-            figures.map(polygon => (
-              <PolygonFigure
-                key={polygon.id}
-                figure={polygon}
-                options={{
-                  newPoint: polygon.id === selectedFigureId ? tracePoint || undefined : undefined,
-                  editing: selectedFigureId === polygon.id,
-                  finished: polygon.finished,
-                  sketch: true,
-                  color: polygon.color,
-                  vertexColor: polygon.color,
-                  interactive: true,
-                  scale,
-                  onSelect: () => setSelectedFigureId(polygon.id),
-                  onChange: handleFigureChange
-                }}
-              />
-            ))
-          }
+          {figures.map((polygon) => (
+            <PolygonFigure
+              key={polygon.id}
+              figure={polygon}
+              options={{
+                newPoint:
+                  polygon.id === selectedFigureId
+                    ? tracePoint || undefined
+                    : undefined,
+                editing: selectedFigureId === polygon.id,
+                finished: polygon.finished,
+                sketch: true,
+                color: polygon.color,
+                vertexColor: polygon.color,
+                interactive: !isDrawing || polygon.id === selectedFigureId,
+                scale,
+                onSelect: () => {
+                  if (!isDrawing) {
+                    setSelectedFigureId(polygon.id);
+                  }
+                },
+                onChange: handleFigureChange,
+              }}
+            />
+          ))}
         </Layer>
-
       </Stage>
     </div>
-  )
-}
+  );
+};
 
 export default Canvas;
