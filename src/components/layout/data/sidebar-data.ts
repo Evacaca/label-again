@@ -10,6 +10,7 @@ import {
   PencilLine,
   Lock,
   Unlock,
+  Save,
 } from "lucide-react";
 
 export interface SidebarState {
@@ -77,11 +78,16 @@ export const sidebarData: SidebarItem[] = [
     title: "Projects",
     items: [
       {
+        title: "Save",
+        key: "saveProject",
+        icon: Save,
+        type: "action",
+      },
+      {
         title: "Edit",
         key: "editProject",
         icon: PencilLine,
         type: "action",
-        disabled: (s) => !s.project,
       },
       {
         title: "New",

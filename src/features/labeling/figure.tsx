@@ -108,10 +108,12 @@ abstract class Figure extends Component<FigureProps, FigureState> {
           dash={dashArray}
           fillRule="evenodd"
           onClick={(e: Konva.KonvaEventObject<MouseEvent>) => {
-            if (interactive) {
+            if (!interactive) return;
+            // 绘制中（未闭合）时不阻止冒泡，让 Stage 收到点击以添加点/闭合多边形；已闭合时阻止冒泡仅做选中
+            if (finished) {
               e.cancelBubble = true;
-              options.onSelect();
             }
+            options.onSelect();
           }}
         />
         {this.makeGuides()}

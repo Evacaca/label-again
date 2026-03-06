@@ -1,6 +1,17 @@
 import React, { useRef } from "react";
-import type { Project } from "./data/schema";
+import type { Project, ImageTransformState, StageState } from "./data/schema";
 import { set, values, del } from 'idb-keyval';
+
+export interface CanvasStateRefValue {
+  getStageState: () => StageState | null;
+}
+
+export interface ProjectRefValue {
+  handleExport: () => void;
+  handleFlipX: () => void;
+  handleFlipY: () => void;
+  getImageTransform?: () => ImageTransformState | null;
+}
 
 interface ProjectContextType {
   projects: Project[];
@@ -9,7 +20,8 @@ interface ProjectContextType {
   getProject: (id: string) => Project | null;
   updateProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  projectRef: React.RefObject<{ handleExport: () => void; handleFlipX: () => void; handleFlipY: () => void } | null>;
+  projectRef: React.RefObject<ProjectRefValue | null>;
+  canvasStateRef: React.RefObject<CanvasStateRefValue | null>;
   exportImage: () => void;
   flipImageX: () => void;
   flipImageY: () => void;
@@ -27,11 +39,8 @@ interface Props {
 
 export default function ProjectProvider({ children }: Props) {
   const [projects, setProjects] = React.useState<Project[]>([]);
-  const projectRef = useRef<{
-    handleExport: () => void;
-    handleFlipX: () => void;
-    handleFlipY: () => void;
-  }>(null);
+  const projectRef = useRef<ProjectRefValue | null>(null);
+  const canvasStateRef = useRef<CanvasStateRefValue | null>(null);
   const [editProjectOpen, setEditProjectOpen] = React.useState(false);
   const [isImageLocked, setIsImageLocked] = React.useState(false);
 
@@ -91,6 +100,7 @@ export default function ProjectProvider({ children }: Props) {
       updateProject,
       deleteProject,
       projectRef,
+      canvasStateRef,
       exportImage,
       flipImageX,
       flipImageY,

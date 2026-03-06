@@ -11,10 +11,22 @@ import { Button } from "@/components/ui/button";
 
 export function NavGroup({ title, items }: SidebarItem) {
   const { labels } = useLabels()
-  const { exportImage, flipImageX, flipImageY, getProject, setEditProjectOpen, toggleImageLock, isImageLocked } = useProjects()
+  const {
+    exportImage,
+    flipImageX,
+    flipImageY,
+    getProject,
+    updateProject,
+    setEditProjectOpen,
+    toggleImageLock,
+    isImageLocked,
+    projectRef,
+    canvasStateRef,
+  } = useProjects()
   const navigate = useNavigate();
   const { labelId } = useParams({ strict: false }) as { labelId?: string };
   const project = labelId ? getProject(labelId) : null;
+  const [saveSuccessOpen, setSaveSuccessOpen] = React.useState(false);
   const hasImage = !!project?.image;
 
   // 构建当前状态快照，用于传递给配置中的判断函数
@@ -67,6 +79,19 @@ export function NavGroup({ title, items }: SidebarItem) {
         case 'editProject':
           setEditProjectOpen(true);
           break;
+        case 'saveProject': {
+          if (!project) break;
+          const stageState = canvasStateRef?.current?.getStageState?.() ?? null;
+          const imageTransform = projectRef?.current?.getImageTransform?.() ?? null;
+          console.log('------ imageTransform ------', imageTransform)
+          updateProject({
+            ...project,
+            labels: [...labels],
+            ...(stageState && { stage: stageState }),
+            ...(imageTransform && { imageTransform }),
+          }).then(() => setSaveSuccessOpen(true));
+          break;
+        }
         case 'showShortcuts':
           setShortcutsOpen(!shortcutsOpen);
           break;
@@ -92,7 +117,9 @@ export function NavGroup({ title, items }: SidebarItem) {
                 const isActive = item.isActive?.(stateSnapshot);
 
                 // 解析图标和标题（可能是函数也可能是静态值）
-                const Icon = typeof item.icon === 'function' ? item.icon(stateSnapshot) : item.icon;
+                const Icon = typeof item.icon === 'function'
+                  ? (item.icon as (s: unknown) => React.ElementType)(stateSnapshot)
+                  : item.icon;
                 const itemTitle = typeof item.title === 'function' ? item.title(stateSnapshot) : item.title;
 
                 const button = (
@@ -160,6 +187,20 @@ export function NavGroup({ title, items }: SidebarItem) {
           </div>
           <DialogFooter>
             <Button onClick={() => setAlertOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={saveSuccessOpen} onOpenChange={setSaveSuccessOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Saved</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm text-muted-foreground">
+            Project saved successfully.
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setSaveSuccessOpen(false)}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

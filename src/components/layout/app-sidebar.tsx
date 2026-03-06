@@ -69,7 +69,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton
                     isActive={label.id === currentLabel?.id}
                     onClick={() => {
-                      setCurrentLabel(label);
+                      if (currentLabel?.id !== label.id) {
+                        setCurrentLabel(label);
+                      }
                     }}
                   >
                     <Badge
