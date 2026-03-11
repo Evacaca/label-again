@@ -69,6 +69,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton
                     isActive={label.id === currentLabel?.id}
                     onClick={() => {
+                      console.log('label.id', label.id)
+                      console.log('currentLabel?.id', currentLabel?.id)
                       if (currentLabel?.id !== label.id) {
                         setCurrentLabel(label);
                       }

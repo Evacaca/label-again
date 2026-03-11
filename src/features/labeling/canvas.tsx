@@ -206,6 +206,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const prevLabelIdRef = React.useRef<string | null>(null);
   useEffect(() => {
     const currentLabel = labelRef.current;
+    console.log("----- currentLabel -----", currentLabel);
     const currentLabelId = currentLabel?.id ?? null;
     if (prevLabelIdRef.current === currentLabelId) return;
     prevLabelIdRef.current = currentLabelId;
@@ -440,6 +441,10 @@ const Canvas: React.FC<CanvasProps> = ({
     }));
     const otherPolygons = polygons.filter((p) => p.labelId !== labelId);
     setPolygons([...otherPolygons, ...previousLabelPolygons]);
+    // 撤销后若存在未完成的 polygon，自动进入编辑状态，便于继续基于该 figure 绘制/显示 guides
+    const unfinished = previousLabelPolygons.find((p) => !p.finished) ?? null;
+    setSelectedFigureId(unfinished?.id ?? null);
+    setTracePoint(null);
   }, [label, historyByLabel, polygons]);
 
   const redo = useCallback(() => {
@@ -462,6 +467,9 @@ const Canvas: React.FC<CanvasProps> = ({
     }));
     const otherPolygons = polygons.filter((p) => p.labelId !== labelId);
     setPolygons([...otherPolygons, ...nextLabelPolygons]);
+    const unfinished = nextLabelPolygons.find((p) => !p.finished) ?? null;
+    setSelectedFigureId(unfinished?.id ?? null);
+    setTracePoint(null);
   }, [label, redoStackByLabel, polygons]);
 
   useEffect(() => {
