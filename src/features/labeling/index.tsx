@@ -41,10 +41,10 @@ export default function Labeling() {
     [labels, setCurrentLabel, currentLabel?.id],
   );
 
+  // 将 labels 展平为单一的 figures 列表，并根据 hiddenLabelIds 过滤隐藏的标签
   useEffect(() => {
     const newFigures: Polygon[] = [];
     labels.forEach((label) => {
-      if (hiddenLabelIds.has(label.id)) return;
       label.polygons?.forEach((polygon) => {
         newFigures.push({
           ...polygon,
@@ -55,7 +55,7 @@ export default function Labeling() {
       });
     });
     setFigures(newFigures);
-  }, [labels, hiddenLabelIds]);
+  }, [labels]);
   if (!project) return <div>Project not found</div>;
   return (
     <Canvas
