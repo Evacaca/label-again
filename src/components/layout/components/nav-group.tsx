@@ -45,12 +45,22 @@ export function NavGroup({ title, items }: SidebarItem) {
       setAlertOpen(true);
       return;
     }
-    const json = JSON.stringify(labels);
+    const shapes = labels.flatMap(label =>
+      (label.polygons || []).map(polygon => ({
+        label: label.name,
+        points: polygon.points.map((p: { x: number, y: number }) => [p.x, p.y]),
+      }))
+    );
+    console.log(shapes);
+    const exportData = {
+      shapes,
+    };
+    const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'LA-labels.json';
+    a.download = `${project?.name || 'LA'}-labels.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
